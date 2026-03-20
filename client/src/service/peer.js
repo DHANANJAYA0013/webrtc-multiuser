@@ -5,7 +5,7 @@ class PeerService {
     this.iceConfig = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:global.stun.twilio.com:3478" },
+        { urls: "stun:stun1.l.google.com:19302" },
       ],
     };
   }
@@ -14,7 +14,6 @@ class PeerService {
     if (!this.peers[id]) {
       const peer = new RTCPeerConnection(this.iceConfig);
 
-      // ICE candidate send to other user
       peer.onicecandidate = (event) => {
         if (event.candidate) {
           socket.emit("ice:candidate", {
@@ -38,7 +37,6 @@ class PeerService {
     const peer = this.createPeer(id, socket);
 
     const offer = await peer.createOffer();
-
     await peer.setLocalDescription(offer);
 
     return offer;
@@ -50,13 +48,12 @@ class PeerService {
     await peer.setRemoteDescription(offer);
 
     const ans = await peer.createAnswer();
-
     await peer.setLocalDescription(ans);
 
     return ans;
   }
 
-  async setLocalDescription(id, ans) {
+  async setRemoteDescription(id, ans) {
     const peer = this.getPeer(id);
     if (!peer) return;
 

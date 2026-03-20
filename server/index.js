@@ -50,7 +50,6 @@
 //     origin: "*",
 //   },
 // });
-
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 8000;
@@ -58,33 +57,20 @@ const PORT = process.env.PORT || 8000;
 const io = new Server(PORT, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"],
   },
-  transports: ["websocket", "polling"],
 });
 
-const emailToSocketIdMap = new Map();
-const socketidToEmailMap = new Map();
-
 io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
+  console.log("Connected", socket.id);
 
   socket.on("room:join", ({ email, room }) => {
-    console.log("JOIN:", email, room);
-
-    emailToSocketIdMap.set(email, socket.id);
-    socketidToEmailMap.set(socket.id, email);
-
     socket.join(room);
 
-    // notify others only
     socket.to(room).emit("user:joined", {
-      email,
       id: socket.id,
     });
 
-    // confirm to self
-    socket.emit("room:join", { email, room });
+    socket.emit("room:join", { room });
   });
 
   socket.on("user:call", ({ to, offer }) => {
@@ -100,21 +86,6 @@ io.on("connection", (socket) => {
       ans,
     });
   });
-
-  socket.on("peer:nego:needed", ({ to, offer }) => {
-    io.to(to).emit("peer:nego:needed", {
-      from: socket.id,
-      offer,
-    });
-  });
-
-  socket.on("peer:nego:done", ({ to, ans }) => {
-    io.to(to).emit("peer:nego:final", {
-      from: socket.id,
-      ans,
-    });
-  });
-
 
   socket.on("ice:candidate", ({ to, candidate }) => {
     io.to(to).emit("ice:candidate", {
