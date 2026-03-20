@@ -57,38 +57,34 @@ const PORT = process.env.PORT || 8000;
 
 const io = new Server(PORT, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "https://webrtc-multiuser.vercel.app",
-    ],
+    origin: "*",
     methods: ["GET", "POST"],
   },
+  transports: ["websocket", "polling"],
 });
 
 const emailToSocketIdMap = new Map();
 const socketidToEmailMap = new Map();
 
 io.on("connection", (socket) => {
-  console.log("Socket Connected", socket.id);
+  console.log("Socket connected:", socket.id);
 
-  socket.on("room:join", (data) => {
-    const { email, room } = data;
+  socket.on("room:join", ({ email, room }) => {
+    console.log("JOIN:", email, room);
 
     emailToSocketIdMap.set(email, socket.id);
     socketidToEmailMap.set(socket.id, email);
 
     socket.join(room);
 
-    console.log("Joined room:", room, socket.id);
-
-    // notify OTHER users only
+    // notify others only
     socket.to(room).emit("user:joined", {
       email,
       id: socket.id,
     });
 
-    // confirm to current user
-    io.to(socket.id).emit("room:join", data);
+    // confirm to self
+    socket.emit("room:join", { email, room });
   });
 
   socket.on("user:call", ({ to, offer }) => {
