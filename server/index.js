@@ -114,4 +114,12 @@ io.on("connection", (socket) => {
       ans,
     });
   });
+
+
+  socket.on("ice:candidate", ({ to, candidate }) => {
+    io.to(to).emit("ice:candidate", {
+      from: socket.id,
+      candidate,
+    });
+  });
 });

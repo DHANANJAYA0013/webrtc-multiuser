@@ -1,22 +1,30 @@
 class PeerService {
   constructor() {
-    this.peers = {}; // store peer per socketId
+    this.peers = {};
 
     this.iceConfig = {
       iceServers: [
-        {
-          urls: [
-            "stun:stun.l.google.com:19302",
-            "stun:global.stun.twilio.com:3478",
-          ],
-        },
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" },
       ],
     };
   }
 
-  createPeer(id) {
+  createPeer(id, socket) {
     if (!this.peers[id]) {
-      this.peers[id] = new RTCPeerConnection(this.iceConfig);
+      const peer = new RTCPeerConnection(this.iceConfig);
+
+      // ICE candidate send to other user
+      peer.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("ice:candidate", {
+            to: id,
+            candidate: event.candidate,
+          });
+        }
+      };
+
+      this.peers[id] = peer;
     }
 
     return this.peers[id];
@@ -26,47 +34,44 @@ class PeerService {
     return this.peers[id];
   }
 
-  async getOffer(id) {
-    const peer = this.createPeer(id);
+  async getOffer(id, socket) {
+    const peer = this.createPeer(id, socket);
 
     const offer = await peer.createOffer();
 
-    await peer.setLocalDescription(
-      new RTCSessionDescription(offer)
-    );
+    await peer.setLocalDescription(offer);
 
     return offer;
   }
 
-  async getAnswer(id, offer) {
-    const peer = this.createPeer(id);
+  async getAnswer(id, offer, socket) {
+    const peer = this.createPeer(id, socket);
 
-    await peer.setRemoteDescription(
-      new RTCSessionDescription(offer)
-    );
+    await peer.setRemoteDescription(offer);
 
     const ans = await peer.createAnswer();
 
-    await peer.setLocalDescription(
-      new RTCSessionDescription(ans)
-    );
+    await peer.setLocalDescription(ans);
 
     return ans;
   }
 
   async setLocalDescription(id, ans) {
     const peer = this.getPeer(id);
-
     if (!peer) return;
 
-    await peer.setRemoteDescription(
-      new RTCSessionDescription(ans)
-    );
+    await peer.setRemoteDescription(ans);
+  }
+
+  async addIceCandidate(id, candidate) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    await peer.addIceCandidate(candidate);
   }
 
   addTrack(id, stream) {
     const peer = this.getPeer(id);
-
     if (!peer) return;
 
     stream.getTracks().forEach((track) => {

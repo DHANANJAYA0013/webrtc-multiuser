@@ -12,7 +12,7 @@ const RoomPage = () => {
 
   // user joined
   const handleUserJoined = useCallback(({ id }) => {
-    console.log("User joined", id);
+    console.log("User joined:", id);
 
     setRemoteSocketIds((prev) => {
       if (prev.includes(id)) return prev;
@@ -20,7 +20,7 @@ const RoomPage = () => {
     });
   }, []);
 
-  // call all users
+  // call users
   const handleCallUser = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
@@ -30,7 +30,7 @@ const RoomPage = () => {
     setMyStream(stream);
 
     remoteSocketIds.forEach(async (id) => {
-      const offer = await peer.getOffer(id);
+      const offer = await peer.getOffer(id, socket);
 
       socket.emit("user:call", {
         to: id,
@@ -42,7 +42,7 @@ const RoomPage = () => {
   // incoming call
   const handleIncomingCall = useCallback(
     async ({ from, offer }) => {
-      console.log("Incoming from", from);
+      console.log("Incoming call from", from);
 
       setRemoteSocketIds((prev) => {
         if (prev.includes(from)) return prev;
@@ -56,7 +56,7 @@ const RoomPage = () => {
 
       setMyStream(stream);
 
-      const ans = await peer.getAnswer(from, offer);
+      const ans = await peer.getAnswer(from, offer, socket);
 
       socket.emit("call:accepted", {
         to: from,
@@ -66,7 +66,19 @@ const RoomPage = () => {
     [socket]
   );
 
-  // send stream to all peers
+  // call accepted
+  const handleCallAccepted = useCallback(
+    async ({ from, ans }) => {
+      await peer.setLocalDescription(from, ans);
+
+      if (myStream) {
+        peer.addTrack(from, myStream);
+      }
+    },
+    [myStream]
+  );
+
+  // send stream
   const sendStreams = useCallback(() => {
     if (!myStream) return;
 
@@ -75,20 +87,18 @@ const RoomPage = () => {
     });
   }, [myStream, remoteSocketIds]);
 
-  // call accepted
-  const handleCallAccepted = useCallback(
-    async ({ from, ans }) => {
-      await peer.setLocalDescription(from, ans);
-
-      sendStreams();
+  // ICE candidate receive
+  const handleIceCandidate = useCallback(
+    async ({ from, candidate }) => {
+      await peer.addIceCandidate(from, candidate);
     },
-    [sendStreams]
+    []
   );
 
   // negotiation
   const handleNegoNeeded = useCallback(
     async (id) => {
-      const offer = await peer.getOffer(id);
+      const offer = await peer.getOffer(id, socket);
 
       socket.emit("peer:nego:needed", {
         to: id,
@@ -100,7 +110,7 @@ const RoomPage = () => {
 
   const handleNegoNeedIncoming = useCallback(
     async ({ from, offer }) => {
-      const ans = await peer.getAnswer(from, offer);
+      const ans = await peer.getAnswer(from, offer, socket);
 
       socket.emit("peer:nego:done", {
         to: from,
@@ -117,14 +127,14 @@ const RoomPage = () => {
     []
   );
 
-  // track event for multiple peers
+  // track events
   useEffect(() => {
     remoteSocketIds.forEach((id) => {
-      const peerConnection = peer.getPeer(id);
+      const p = peer.getPeer(id);
 
-      if (!peerConnection) return;
+      if (!p) return;
 
-      peerConnection.ontrack = (ev) => {
+      p.ontrack = (ev) => {
         const stream = ev.streams[0];
 
         setRemoteStreams((prev) => {
@@ -133,18 +143,18 @@ const RoomPage = () => {
         });
       };
 
-      peerConnection.onnegotiationneeded = () =>
-        handleNegoNeeded(id);
+      p.onnegotiationneeded = () => handleNegoNeeded(id);
     });
   }, [remoteSocketIds, handleNegoNeeded]);
 
-  // socket events
+  // socket listeners
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
     socket.on("incomming:call", handleIncomingCall);
     socket.on("call:accepted", handleCallAccepted);
     socket.on("peer:nego:needed", handleNegoNeedIncoming);
     socket.on("peer:nego:final", handleNegoNeedFinal);
+    socket.on("ice:candidate", handleIceCandidate);
 
     return () => {
       socket.off("user:joined", handleUserJoined);
@@ -152,6 +162,7 @@ const RoomPage = () => {
       socket.off("call:accepted", handleCallAccepted);
       socket.off("peer:nego:needed", handleNegoNeedIncoming);
       socket.off("peer:nego:final", handleNegoNeedFinal);
+      socket.off("ice:candidate", handleIceCandidate);
     };
   }, [
     socket,
@@ -160,6 +171,7 @@ const RoomPage = () => {
     handleCallAccepted,
     handleNegoNeedIncoming,
     handleNegoNeedFinal,
+    handleIceCandidate,
   ]);
 
   return (
