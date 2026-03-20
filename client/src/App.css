@@ -190,6 +190,39 @@ body {
   text-align: center;
 }
 
+.stream-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.stream-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stream-card.muted {
+  background: rgba(255, 255, 255, 0.01);
+  border-style: dashed;
+}
+
+.stream-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.video-placeholder.tall {
+  min-height: 180px;
+  display: grid;
+  align-items: center;
+}
+
 .lobby-page {
   width: 100%;
   display: flex;

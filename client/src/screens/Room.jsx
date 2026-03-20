@@ -163,41 +163,64 @@ const RoomPage = () => {
   ]);
 
   return (
-    <div>
-      <h2>Room</h2>
+    <div className="room-page">
+      <div className="room-shell">
+        <div className="room-header">
+          <div>
+            <p className="eyebrow">Live room</p>
+            <h1>Group call</h1>
+            <p className="subtext">
+              Call every participant, share your stream, and see all remotes.
+            </p>
+          </div>
+          <div className="status-chip status-live">
+            {remoteSocketIds.length} connected
+          </div>
+        </div>
 
-      <button onClick={handleCallUser}>
-        Call All
-      </button>
+        <div className="room-actions">
+          <button className="button secondary" onClick={handleCallUser} disabled={!remoteSocketIds.length}>
+            Call all
+          </button>
+          <button className="button primary" onClick={sendStreams} disabled={!myStream}>
+            Send my stream
+          </button>
+        </div>
 
-      <button onClick={sendStreams}>
-        Send Stream
-      </button>
+        <div className="stream-grid">
+          <div className="stream-card">
+            <div className="video-label">My Stream</div>
+            <div className="video-frame">
+              {myStream ? (
+                <ReactPlayer playing muted width="100%" height="100%" url={myStream} />
+              ) : (
+                <div className="video-placeholder">Click "Call all" to start and share your camera.</div>
+              )}
+            </div>
+          </div>
 
-      <h3>My Stream</h3>
+          {remoteStreams.map((stream, i) => (
+            <div className="stream-card" key={i}>
+              <div className="video-label">Remote #{i + 1}</div>
+              <div className="video-frame">
+                <ReactPlayer playing muted width="100%" height="100%" url={stream} />
+              </div>
+              <div className="stream-meta">Streaming via P2P</div>
+            </div>
+          ))}
 
-      {myStream && (
-        <ReactPlayer
-          playing
-          muted
-          width="300px"
-          height="200px"
-          url={myStream}
-        />
-      )}
-
-      <h3>Remote Streams</h3>
-
-      {remoteStreams.map((stream, i) => (
-        <ReactPlayer
-          key={i}
-          playing
-          muted
-          width="300px"
-          height="200px"
-          url={stream}
-        />
-      ))}
+          {!remoteStreams.length && (
+            <div className="stream-card muted">
+              <div className="video-label">Remote streams</div>
+              <div className="video-frame">
+                <div className="video-placeholder tall">
+                  Waiting for participants to share video.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

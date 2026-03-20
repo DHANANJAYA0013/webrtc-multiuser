@@ -79,11 +79,15 @@ io.on("connection", (socket) => {
 
     socket.join(room);
 
-    io.to(room).emit("user:joined", {
+    console.log("Joined room:", room, socket.id);
+
+    // notify OTHER users only
+    socket.to(room).emit("user:joined", {
       email,
       id: socket.id,
     });
 
+    // confirm to current user
     io.to(socket.id).emit("room:join", data);
   });
 
