@@ -51,6 +51,20 @@
 //   },
 // });
 
+const { Server } = require("socket.io");
+
+const PORT = process.env.PORT || 8000;
+
+const io = new Server(PORT, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "https://webrtc-multiuser.vercel.app",
+    ],
+    methods: ["GET", "POST"],
+  },
+});
+
 const emailToSocketIdMap = new Map();
 const socketidToEmailMap = new Map();
 

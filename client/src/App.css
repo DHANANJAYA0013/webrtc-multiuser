@@ -229,11 +229,21 @@ body {
   line-height: 1.4;
 }
 
+.lobby-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 12px;
+}
+
 .lobby-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .input-group {
@@ -245,6 +255,12 @@ body {
 .input-label {
   font-weight: 600;
   color: var(--muted);
+}
+
+.input-hint {
+  margin: 2px 0 0;
+  color: rgba(232, 236, 248, 0.65);
+  font-size: 13px;
 }
 
 .input-control {
@@ -267,6 +283,69 @@ body {
   color: rgba(255, 255, 255, 0.45);
 }
 
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.form-footnote {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.lobby-aside {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.info-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.info-card.muted {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.info-title {
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.info-steps,
+.info-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.info-steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 @media (max-width: 720px) {
   .room-shell {
     padding: 24px;
@@ -287,5 +366,9 @@ body {
 
   .lobby-header {
     flex-direction: column;
+  }
+
+  .lobby-form {
+    padding: 14px;
   }
 }
