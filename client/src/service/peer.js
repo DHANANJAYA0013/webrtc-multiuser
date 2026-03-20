@@ -1,40 +1,77 @@
 class PeerService {
   constructor() {
-    if (!this.peer) {
-      this.peer = new RTCPeerConnection({
-        iceServers: [
-          {
-            urls: [
-              "stun:stun.l.google.com:19302",
-              "stun:global.stun.twilio.com:3478",
-            ],
-          },
-        ],
-      });
-    }
+    this.peers = {}; // store peer per socketId
+
+    this.iceConfig = {
+      iceServers: [
+        {
+          urls: [
+            "stun:stun.l.google.com:19302",
+            "stun:global.stun.twilio.com:3478",
+          ],
+        },
+      ],
+    };
   }
 
-  async getAnswer(offer) {
-    if (this.peer) {
-      await this.peer.setRemoteDescription(offer);
-      const ans = await this.peer.createAnswer();
-      await this.peer.setLocalDescription(new RTCSessionDescription(ans));
-      return ans;
+  createPeer(id) {
+    if (!this.peers[id]) {
+      this.peers[id] = new RTCPeerConnection(this.iceConfig);
     }
+
+    return this.peers[id];
   }
 
-  async setLocalDescription(ans) {
-    if (this.peer) {
-      await this.peer.setRemoteDescription(new RTCSessionDescription(ans));
-    }
+  getPeer(id) {
+    return this.peers[id];
   }
 
-  async getOffer() {
-    if (this.peer) {
-      const offer = await this.peer.createOffer();
-      await this.peer.setLocalDescription(new RTCSessionDescription(offer));
-      return offer;
-    }
+  async getOffer(id) {
+    const peer = this.createPeer(id);
+
+    const offer = await peer.createOffer();
+
+    await peer.setLocalDescription(
+      new RTCSessionDescription(offer)
+    );
+
+    return offer;
+  }
+
+  async getAnswer(id, offer) {
+    const peer = this.createPeer(id);
+
+    await peer.setRemoteDescription(
+      new RTCSessionDescription(offer)
+    );
+
+    const ans = await peer.createAnswer();
+
+    await peer.setLocalDescription(
+      new RTCSessionDescription(ans)
+    );
+
+    return ans;
+  }
+
+  async setLocalDescription(id, ans) {
+    const peer = this.getPeer(id);
+
+    if (!peer) return;
+
+    await peer.setRemoteDescription(
+      new RTCSessionDescription(ans)
+    );
+  }
+
+  addTrack(id, stream) {
+    const peer = this.getPeer(id);
+
+    if (!peer) return;
+
+    stream.getTracks().forEach((track) => {
+      peer.addTrack(track, stream);
+    });
   }
 }
 
